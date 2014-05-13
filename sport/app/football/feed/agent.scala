@@ -89,6 +89,11 @@ class CompetitionAgent(_competition: Competition) extends Fixtures with Results 
 
   def addMatches(newMatches: Seq[FootballMatch]) = agent.send{ comp =>
 
+    // for some competitions PA issue placeholder matches for KO stage then delete them and replace with real matches when the teams are known
+    val oldMatches = comp.matches.filterNot { oldM =>
+      newMatches.exists(newM => oldM.awayTeam == newM.awayTeam && oldM.homeTeam == newM.homeTeam && oldM.date == newM.date)
+    }
+
     //log any changes to the status of the match
     newMatches.foreach{ newMatch =>
       comp.matches.find(_.id == newMatch.id).foreach{ oldMatch =>
@@ -99,7 +104,7 @@ class CompetitionAgent(_competition: Competition) extends Fixtures with Results 
     }
 
                          //it is important that newMatches are at the start of the list here
-    comp.copy(matches = (newMatches ++ comp.matches).sorted(MatchStatusOrdering).distinctBy(_.id).sortByDate)
+    comp.copy(matches = (newMatches ++ oldMatches).sorted(MatchStatusOrdering).distinctBy(_.id).sortByDate)
   }
 
   def refresh() {
